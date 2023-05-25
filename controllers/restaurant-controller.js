@@ -1,5 +1,6 @@
 const { Restaurant, Category, Comment, User } = require('../models')
 const { getOffset, getPagination } = require('../helpers/pagination-helper')
+const authHelpers = require('../helpers/auth-helpers')
 const restaurantController = {
   getRestaurants: (req, res, next) => {
     const categoryId = Number(req.query.categoryId) || ''
@@ -109,7 +110,7 @@ const restaurantController = {
         const result = restaurants.map(restaurant => ({
           ...restaurant.toJSON(),
           favoritedCount: restaurant.FavoritedUsers.length,
-          isFavorited: req.user && req.user.FavoritedRestaurants.some(r => r.id === restaurant.id)
+          isFavorited: authHelpers.getUser(req).FavoritedRestaurants.some(r => r.id === restaurant.id)
         }))
           .filter(r => r.favoritedCount > 0)
           .sort((a, b) => b.favoritedCount - a.favoritedCount)

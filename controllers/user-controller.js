@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs')
 const { imgurFileHandler } = require('../helpers/file-helpers')
 const { Restaurant, Comment, User, Favorite, Like, Followship } = require('../models')
+const authHelpers = require('../helpers/auth-helpers')
 const userController = {
   // 註冊頁面
   signUpPage: (req, res) => res.render('signup'),
@@ -38,9 +39,7 @@ const userController = {
   },
   // 瀏覽使用者個人頁面
   getUser: (req, res, next) => {
-    const id = req.params.id
-    const userId = req.user?.id || id
-    return User.findByPk(id, {
+    return User.findByPk(req.params.id, {
       nest: true,
       include: [
         { model: Comment, include: Restaurant },
@@ -64,39 +63,31 @@ const userController = {
           ...result,
           Comments
         }
-        const signInUserId = Number(id) === userId
+        const signInUserId = Number(req.params.id) === authHelpers.getUser(req).id
         return res.render('users/profile', { user: result, signInUserId })
       })
       .catch(err => next(err))
   },
   // 瀏覽使用者編輯頁面
   editUser: (req, res, next) => {
-    const id = req.params.id
-    const userId = req.user?.id || id
-    return User.findByPk(userId, { raw: true })
+    return User.findByPk(authHelpers.getUser(req).id, { raw: true })
       .then(user => {
         if (!user) throw new Error("User didn't exist!")
-        // 確認是否為該user
-        if (Number(id) !== userId) throw new Error('You are not the user!')
         return res.render('users/edit', { user })
       })
       .catch(err => next(err))
   },
   // 編輯使用者個人頁面功能
   putUser: (req, res, next) => {
-    const id = req.params.id
-    const userId = req.user?.id || id
     const { name } = req.body
     if (!name) throw new Error('User name is required!')
     const { file } = req
     return Promise.all([
-      User.findByPk(userId),
+      User.findByPk(authHelpers.getUser(req).id),
       imgurFileHandler(file)
     ])
       .then(([user, filePath]) => {
         if (!user) throw new Error("User didn't exist!")
-        // 確認是否為該user
-        if (Number(id) !== userId) throw new Error('You are not the user!')
         return user.update({
           name,
           image: filePath || user.image
@@ -104,7 +95,7 @@ const userController = {
       })
       .then(() => {
         req.flash('success_messages', '使用者資料編輯成功')
-        return res.redirect(`/users/${userId}`)
+        return res.redirect(`/users/${authHelpers.getUser(req).id}`)
       })
       .catch(err => next(err))
   },

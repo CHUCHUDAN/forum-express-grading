@@ -3,7 +3,7 @@ const router = express.Router()
 const restController = require('../controllers/restaurant-controller')
 const userController = require('../controllers/user-controller')
 const { generalErrorHandler } = require('../middleware/error-handler')
-const { authenticated, authenticatedAdmin } = require('../middleware/auth')
+const { authenticated, authenticatedAdmin, isUser } = require('../middleware/auth')
 const passport = require('../config/passport')
 const admin = require('./modules/admin')
 const commentController = require('../controllers/comment-controller')
@@ -34,9 +34,9 @@ router.delete('/following/:userId', authenticated, userController.removeFollowin
 // 美食達人頁面
 router.get('/users/top', authenticated, userController.getTopUsers)
 // 瀏覽使用者編輯頁面
-router.get('/users/:id/edit', authenticated, userController.editUser)
+router.get('/users/:id/edit', authenticated, isUser, userController.editUser)
 // 編輯使用者個人頁面功能
-router.put('/users/:id', authenticated, upload.single('image'), userController.putUser)
+router.put('/users/:id', authenticated, isUser, upload.single('image'), userController.putUser)
 // 瀏覽使用者個人頁面
 router.get('/users/:id', authenticated, userController.getUser)
 // top-10人氣餐廳
