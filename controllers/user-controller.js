@@ -43,14 +43,29 @@ const userController = {
     return User.findByPk(id, {
       nest: true,
       include: [
-        { model: Comment, include: Restaurant }
+        { model: Comment, include: Restaurant },
+        { model: Restaurant, as: 'FavoritedRestaurants' },
+        { model: User, as: 'Followers' },
+        { model: User, as: 'Followings' }
       ]
     })
       .then(user => {
         if (!user) throw new Error("User didn't exist!")
         // 確認是否為該user
+        const Comments = []
+        let result = user.toJSON()
+        result
+          .Comments
+          .forEach(comment => {
+            const findFixed = Comments.some(s => s.restaurantId === comment.restaurantId)
+            if (!findFixed) Comments.push(comment)
+          })
+        result = {
+          ...result,
+          Comments
+        }
         const signInUserId = Number(id) === userId
-        return res.render('users/profile', { user: user.toJSON(), signInUserId })
+        return res.render('users/profile', { user: result, signInUserId })
       })
       .catch(err => next(err))
   },
